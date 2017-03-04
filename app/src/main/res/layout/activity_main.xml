@@ -9,8 +9,21 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="com.example.abhishek.localcloud.MainActivity">
 
-    <TextView
+    <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Hello World!" />
+        android:id="@+id/buttonupload"
+        android:text="@string/upload"
+        android:layout_centerVertical="true"
+        android:layout_centerHorizontal="true"/>
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/button1"
+        android:text="@string/uploadimage"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@+id/buttonupload"
+        android:paddingTop="10dp"
+        />
 </RelativeLayout>

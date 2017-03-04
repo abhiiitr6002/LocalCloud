@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">LocalCloud</string>
+    <string name="upload">Upload</string>
+    <string name="uploadimage">Upload Image</string>
 </resources>
