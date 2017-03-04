@@ -15,6 +15,7 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.webkit.MimeTypeMap;
 import android.widget.Button;
@@ -117,10 +118,12 @@ public class MainActivity extends AppCompatActivity {
                     RequestBody request_body = new MultipartBody.Builder()
                             .setType(MultipartBody.FORM)
                             .addFormDataPart("type",content_type)
+                            .addFormDataPart("title","yiihbj")
+
                             .addFormDataPart("uploaded_file",file_path.substring(file_path.lastIndexOf("/")+1),file_body)
                             .build();
 
-                    try{
+
                         Request request = new Request.Builder()
                                 .url(Constants.Url)
                                 .post(request_body)
@@ -128,7 +131,7 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-
+                    try{
                         Response response = client.newCall(request).execute();
                         if (!response.isSuccessful()){
                             throw new IOException("Error :"+response);
@@ -138,6 +141,8 @@ public class MainActivity extends AppCompatActivity {
                       //  progress.dismiss();
 
                     }catch (Exception e){
+                        e.printStackTrace();
+                        Log.e("error",e.getMessage());
                         toast("Kuch galat hain url mein");
                     }
 
