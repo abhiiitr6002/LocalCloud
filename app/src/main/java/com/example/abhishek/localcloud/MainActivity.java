@@ -1,31 +1,31 @@
 package com.example.abhishek.localcloud;
 
 import android.Manifest;
-import android.app.DownloadManager;
 import android.app.ProgressDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.media.MediaScannerConnection;
-import android.net.Uri;
+import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Environment;
+import android.os.Handler;
+import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.format.Formatter;
 import android.util.Log;
 import android.view.View;
 import android.webkit.MimeTypeMap;
 import android.widget.Button;
-import android.widget.Toast;
 
 
-import com.nbsp.materialfilepicker.MaterialFilePicker;
 import com.nbsp.materialfilepicker.ui.FilePickerActivity;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
 
 import okhttp3.MediaType;
@@ -35,14 +35,22 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
-import static android.support.v4.app.ActivityCompat.startActivity;
 import static xdroid.toaster.Toaster.toast;
 
 public class MainActivity extends AppCompatActivity {
+    private int mInterval = 20000;
 
+    Handler handler;
     String SCAN_PATH;
     File[] allFiles ;
     private  Button button;
+
+    public static Context context;
+    SharedPreferences sharedpreferences;
+
+    private final static int INTERVAL = 60000; //2 minutes
+    private Handler mHandler;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -51,7 +59,17 @@ public class MainActivity extends AppCompatActivity {
         File folder = new File(Environment.getExternalStorageDirectory().getPath()+"/DCIM/");
         allFiles = folder.listFiles();
 
+        context = getApplicationContext();
+
+
+
         button = (Button)findViewById(R.id.button1);
+
+        sharedpreferences = getSharedPreferences("my prefs", Context.MODE_PRIVATE);
+
+        WifiManager wm = (WifiManager) getSystemService(WIFI_SERVICE);
+        String ip = Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress());
+        Log.e("errorip",ip);
 
         if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.M){
             if (ActivityCompat.checkSelfPermission(this , Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
@@ -61,9 +79,65 @@ public class MainActivity extends AppCompatActivity {
 
             }
         }
-        enable_button();
+        mHandler = new Handler();
+        startRepeatingTask();
+/////
+//        File fl = new File(Constants.dir);
+//        File[] files = fl.listFiles(new FileFilter()
+//        {
+//            public boolean accept(File file) {
+//                return file.isFile();
+//            }
+//        });
+//        for (File file : files)
+//        {
+//            String file_path = file.getAbsolutePath();
+//            if((file_path.substring(file_path.lastIndexOf("/")+1).equals("IMG_20170301_175233796.jpg")))
+//            {
+//                Log.e("errorr", String.valueOf(file.lastModified()));
+//            }
+//            if(file.lastModified()>1488370955000l)
+//            {
+//                Log.e("errorr", String.valueOf(file.lastModified()));
+//            }
+//        }
+//        final File f = files[0];
+//        String content_type = getMimeType(f.getPath());
+//        Log.e("errorr1",String.valueOf(f.lastModified()));
+//        String file_path = f.getAbsolutePath();
+//        Log.e("errorr2",file_path);
+//        Log.e("errorr3",file_path.substring(file_path.lastIndexOf("/")+1));//,file_body
 
 
+
+
+    }
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        stopRepeatingTask();
+    }
+
+    Runnable mStatusChecker = new Runnable() {
+        @Override
+        public void run() {
+            try {
+//                updateStatus(); //this function can change value of mInterval.
+            } finally {
+                // 100% guarantee that this always happens, even if
+                // your update method throws an exception
+               sendingtime();
+                mHandler.postDelayed(mStatusChecker, mInterval);
+            }
+        }
+    };
+
+    void startRepeatingTask() {
+        mStatusChecker.run();
+    }
+
+    void stopRepeatingTask() {
+        mHandler.removeCallbacks(mStatusChecker);
     }
 
     private void enable_button(){
@@ -71,14 +145,18 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
 
-                new MaterialFilePicker()
-                        .withActivity(MainActivity.this)
-                        .withRequestCode(10)
-                        .start();
+//                new MaterialFilePicker()
+//                        .withActivity(MainActivity.this)
+//                        .withRequestCode(10)
+//                        .start();
+//                sendingtime();
+                mHandler = new Handler();
+                startRepeatingTask();
 
             }
         });
     }
+
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -110,7 +188,11 @@ public class MainActivity extends AppCompatActivity {
                     File f = new File(data.getStringExtra(FilePickerActivity.RESULT_FILE_PATH));
                     String content_type = getMimeType(f.getPath());
 
+                    Log.e("errorr",String.valueOf(f.lastModified()));
+
                     String file_path = f.getAbsolutePath();
+
+                    Log.e("errorr",file_path);
 
                     OkHttpClient client = new OkHttpClient();
                     RequestBody file_body = RequestBody.create(MediaType.parse(content_type),f);
@@ -118,7 +200,7 @@ public class MainActivity extends AppCompatActivity {
                     RequestBody request_body = new MultipartBody.Builder()
                             .setType(MultipartBody.FORM)
                             .addFormDataPart("type",content_type)
-                            .addFormDataPart("title","yiihbj")
+                            .addFormDataPart("path","yiihbj")
 
                             .addFormDataPart("uploaded_file",file_path.substring(file_path.lastIndexOf("/")+1),file_body)
                             .build();
@@ -158,27 +240,108 @@ public class MainActivity extends AppCompatActivity {
         return MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
     }
 
-//    public class SingleMediaScanner implements MediaScannerConnection.MediaScannerConnectionClient {
-//
-//        private MediaScannerConnection mMs;
-//        private File mFile;
-//
-//        public SingleMediaScanner(Context context, File f) {
-//            mFile = f;
-//            mMs = new MediaScannerConnection(context, this);
-//            mMs.connect();
-//        }
-//
-//        public void onMediaScannerConnected() {
-//            mMs.scanFile(mFile.getAbsolutePath(), null);
-//        }
-//
-//        public void onScanCompleted(String path, Uri uri) {
-//            Intent intent = new Intent(Intent.ACTION_VIEW);
-//            intent.setData(uri);
-//            startActivity(intent);
-//            mMs.disconnect();
-//        }
-//
-//    }
+
+    private void sendingtime()
+    {
+        File fl = new File(Constants.dir);
+        File[] files = fl.listFiles(new FileFilter()
+        {
+            public boolean accept(File file) {
+                return file.isFile();
+            }
+        });
+        long lastTimeStamp= 1488605655000l;
+//        String tempTimeStamp = PreferenceManager.getDefaultSharedPreferences(context).getString("MYLABEL", null);
+
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+        String tempTimeStamp = preferences.getString("key", "-1");
+//        String tempTimeStamp = sharedpreferences.getString("key","-1");
+        Log.e("errorr5",tempTimeStamp);
+        if (!tempTimeStamp.equals("-1")){
+            lastTimeStamp = Long.parseLong(tempTimeStamp);
+        }
+
+
+
+
+        Log.e("errorr123",String.valueOf(lastTimeStamp));
+        long maxTimeStamp = lastTimeStamp;
+        for (File file : files)
+        {
+            if (file.lastModified() > lastTimeStamp)
+            {
+
+                final File f = file;
+
+                if(maxTimeStamp<file.lastModified()) {
+                    maxTimeStamp = file.lastModified();
+                };
+                Thread t = new Thread(new Runnable()
+                {
+                    @Override
+                    public void run() {
+                      //  File f = new File(data.getStringExtra(FilePickerActivity.RESULT_FILE_PATH));
+                        String content_type = getMimeType(f.getPath());
+
+                        Log.e("errorr",String.valueOf(f.lastModified()));
+
+                        String file_path = f.getAbsolutePath();
+
+                        Log.e("errorr",file_path);
+
+                        OkHttpClient client = new OkHttpClient();
+                        RequestBody file_body = RequestBody.create(MediaType.parse(content_type),f);
+
+                        RequestBody request_body = new MultipartBody.Builder()
+                                .setType(MultipartBody.FORM)
+                                .addFormDataPart("type",content_type)
+                                .addFormDataPart("path",file_path)
+                                .addFormDataPart("uploaded_file",file_path.substring(file_path.lastIndexOf("/")+1),file_body)
+                                .build();
+
+
+                        Request request = new Request.Builder()
+                                .url(Constants.Url)
+                                .post(request_body)
+                                .build();
+
+
+
+                        try{
+                            Response response = client.newCall(request).execute();
+                            if (!response.isSuccessful()){
+                                throw new IOException("Error :"+response);
+
+                            }
+
+                            //  progress.dismiss();
+
+                        }catch (Exception e){
+                            e.printStackTrace();
+                            Log.e("error",e.getMessage());
+                            toast("Kuch galat hain url mein");
+                        }
+
+                    }
+                });
+                t.start();
+//                lastMod = file.lastModified();
+                try {
+                    t.sleep(300);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+//        PreferenceManager.getDefaultSharedPreferences(context).edit().putString("MYLABEL", String.valueOf(maxTimeStamp)).commit();
+
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putString("key",String.valueOf(maxTimeStamp) );
+        editor.apply();
+
+//        SharedPreferences preferences1 = getSharedPreferences("activity_main.xml", 0);
+//        SharedPreferences.Editor editor = preferences1.edit();
+//        editor.putString("key", String.valueOf(maxTimeStamp));
+//        editor.commit();
+    }
 }
