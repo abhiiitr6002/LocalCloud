@@ -1,5 +1,11 @@
 package com.example.abhishek.localcloud;
-
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
+import java.net.Socket;
+import java.net.SocketAddress;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 import android.Manifest;
 import android.app.ProgressDialog;
 import android.content.Context;
@@ -37,7 +43,8 @@ import okhttp3.Response;
 
 import static xdroid.toaster.Toaster.toast;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity
+{
     private int mInterval = 20000;
 
     Handler handler;
@@ -67,9 +74,49 @@ public class MainActivity extends AppCompatActivity {
 
         sharedpreferences = getSharedPreferences("my prefs", Context.MODE_PRIVATE);
 
-        WifiManager wm = (WifiManager) getSystemService(WIFI_SERVICE);
-        String ip = Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress());
-        Log.e("errorip",ip);
+//        WifiManager wm = (WifiManager) getSystemService(WIFI_SERVICE);
+//        String ip = Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress());
+//        Log.e("errorr10",ip);
+//       String array[] = ip.split("\\.");
+//        StringBuilder build = new StringBuilder();
+//        build.append(array[0]);
+//        build.append(".");
+//        build.append(array[1]);
+//        build.append(".");
+//        build.append(array[2]);
+//        build.append(".");
+//        String subst = build.toString();
+//        for (int i=1;i<=255;i++){
+//            String macad="";
+//            StringBuilder bi = new StringBuilder();
+//            bi.append(subst);
+//            bi.append(i);
+//
+//            String tempip = bi.toString();
+//            try {
+//                InetAddress inad = InetAddress.getByName(ip);
+//                SocketAddress sockaddr = new InetSocketAddress(inad, 8000);
+//                // Create an unbound socket
+//                Socket sock = new Socket();
+//
+//                // This method will block no more than timeoutMs.
+//                // If the timeout occurs, SocketTimeoutException is thrown.
+//                int timeoutMs = 2000;   // 2 seconds
+//                Log.e("ip_addr",tempip);
+//                sock.connect(sockaddr, timeoutMs);
+////                exists = true;
+//                Log.e("errorr444","hj");
+//                 macad = getmac(tempip);
+//
+//                Log.e("mac_addr",macad);
+//                if(macad.equals(Constants.MACAD))
+//                    Constants.Url = bi.append(":8000/app/backup").toString();
+//            }catch(Exception e){
+//            }
+//
+//        }
+//
+//        Log.e("errorip",ip);
 
         if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.M){
             if (ActivityCompat.checkSelfPermission(this , Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
@@ -112,12 +159,48 @@ public class MainActivity extends AppCompatActivity {
 
 
     }
+
     @Override
     public void onDestroy() {
         super.onDestroy();
         stopRepeatingTask();
     }
+    public String getmac(String ipad)
+    {
+        String str = "";
+        InetAddress ip;
+        try {
 
+            ip = InetAddress.getByName(ipad);
+           Log.e("Current IP address : " , ip.getHostAddress());
+
+            NetworkInterface network = NetworkInterface.getByInetAddress(ip);
+
+            byte[] mac = network.getHardwareAddress();
+
+
+
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < mac.length; i++) {
+                sb.append(String.format("%02X%s", mac[i], (i < mac.length - 1) ? ":" : ""));
+            }
+//            Log.e("Current MAC address : ",);
+//            System.out.println(sb.toString());
+
+            str = sb.toString();
+            Log.e("errorr11" ,str);
+        } catch (UnknownHostException e) {
+
+            e.printStackTrace();
+
+        } catch (SocketException e){
+
+            e.printStackTrace();
+
+        }
+        return str;
+
+    }
     Runnable mStatusChecker = new Runnable() {
         @Override
         public void run() {
@@ -268,7 +351,7 @@ public class MainActivity extends AppCompatActivity {
         long maxTimeStamp = lastTimeStamp;
         for (File file : files)
         {
-            if (file.lastModified() > lastTimeStamp)
+            if (file.lastModified() > lastTimeStamp && !Constants.Url.equals(""))
             {
 
                 final File f = file;
